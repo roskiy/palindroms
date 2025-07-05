@@ -2,23 +2,22 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <array>
+#include <vector>
+#include <algorithm>
+#include <chrono>
 using namespace std;
 
 struct Range
     {
         int min, max;
     };
-void invertBuffer(int buffer[10],int len)
+void invertBuffer(array<int,10>& buffer,int len)
 {
-    int a;
-    for (int i=0;i<len/2;i++)
-    {
-
-        a=buffer[i];buffer[i]=buffer[len-i-1];buffer[len-i-1]=a;
-    }
+    reverse(buffer.begin(), buffer.begin() + len);
 }
 
-void intactify(int i, int buffer[10],int &len)
+void intactify(int i, array<int,10>& buffer,int &len)
 {
     len=0;
     for (int n=0;n<10&&i>0;n++)
@@ -30,20 +29,19 @@ void intactify(int i, int buffer[10],int &len)
     invertBuffer(buffer,len);
 }
 
-int unintactify(int buffer[10],int len)
+int unintactify(const array<int,10>& buffer,int len)
 {
-    invertBuffer(buffer,len);
     int result=0;
     for (int i=0;i<len;i++)
     {
-        result+=buffer[i]*(int)pow10(i);
+        result = result*10 + buffer[i];
     }
     return result;
 }
 
-int justnine (int buffer[], int n );
+bool justnine (const array<int,10>& buffer, int n );
 
-void generateNextPalindromeUtil (int buffer[], int n )
+void generateNextPalindromeUtil (array<int,10>& buffer, int n )
 {
     int mid = n/2,i = mid - 1,j = (n % 2)? mid + 1 : mid;
     bool l2r = false;
@@ -81,7 +79,8 @@ void generateNextPalindromeUtil (int buffer[], int n )
 
 int generateNextPalindrome(int bufferber)
 {
-    int buffer[10],n=0;
+    array<int,10> buffer{};
+    int n=0;
     if (bufferber<10) return bufferber+1;
     intactify(bufferber,buffer,n);
     if( justnine( buffer, n ) )
@@ -96,12 +95,12 @@ int generateNextPalindrome(int bufferber)
     return unintactify(buffer,n);
 }
 
-int justnine( int* buffer, int n )
+bool justnine( const array<int,10>& buffer, int n )
 {
     for( int i = 0; i < n; ++i )
         if( buffer[i] != 9 )
-            return 0;
-    return 1;
+            return false;
+    return true;
 }
 
 
@@ -115,36 +114,22 @@ int countPalindromes(Range range)
     return count-1;
 }
 
-int getMilliCount(){
-    timeb tb;
-    ftime(&tb);
-    int nCount = tb.millitm + (tb.time & 0xfffff) * 1000;
-    return nCount;
-}
-
-int getMilliSpan(int nTimeStart){
-    int nSpan = getMilliCount() - nTimeStart;
-    if(nSpan < 0)
-        nSpan += 0x100000 * 1000;
-    return nSpan;
-}
-
 
 int main()
 {
-    int a[100],b[100];
-    int n,m,count=0,i=0;
+    vector<Range> ranges;
+    int n, m, count = 0;
     ifstream read("seed.txt");
-    while(read>>n>>m){
-        a[i]=n;b[i]=m;
-        i++;
+    while(read >> n >> m){
+        ranges.push_back({n, m});
     }
-int start = getMilliCount();
+    auto start = chrono::steady_clock::now();
 
-    for (int h=0;h<i;h++)    count+=countPalindromes((Range) {a[h],b[h]});
+    for (const auto& r : ranges)
+        count += countPalindromes(r);
 
-int milliSecondsElapsed = getMilliSpan(start);
+    auto elapsed = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count();
 
-cout<<"\r\n result:"<< count<<" in "<<milliSecondsElapsed<<" milli seconds \r\n";
+    cout << "\n result:" << count << " in " << elapsed << " milli seconds \n";
     return 0;
 }
